@@ -1,0 +1,43 @@
+*** This file has commands to Download & install etcdctl, configure etcd & its certs. etcd is run as a static pod***
+
+etcdctl Installation:
+====================
+mkdir -p /root/k8s/etcd
+cd /root/k8s/etcd
+wget -q --https-only --show-progress –timestamping https://github.com/etcd-io/etcd/releases/download/v3.4.27/etcd-v3.4.27-linux-amd64.tar.gz
+tar -xvzf etcd-v3.4.27-linux-amd64.tar.gz
+mv etcd-v3.4.27-linux-amd64/etcdctl /usr/local/bin/
+
+etcd manifest file:
+===================
+mkdir -p /etc/kubernetes/manifests
+vi /etc/kubernetes/manifests/etcd.yaml
+**************************************************************************
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    run: etcd
+  name: etcd
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - image: gcr.io/etcd-development/etcd:v3.4.27
+    name: etcd
+    args:
+    - /usr/local/bin/etcd
+    - --name=etcd
+    - --advertise-client-urls=http://10.128.0.6:2379
+    - --listen-client-urls=http://0.0.0.0:2379
+    - --listen-peer-urls=http://0.0.0.0:2380
+    - --data-dir=/var/lib/etcd
+    volumeMounts:
+    - mountPath: /var/lib/etcd
+      name: etcd-data
+  volumes:
+  - hostPath:
+      path: /var/lib/etcd
+      type: DirectoryOrCreate
+    name: etcd-data
+**************************************************************************

@@ -1,0 +1,90 @@
+*** This file has commands to configure scheduler & its certs. scheduler is run as a static pod***
+
+vi /etc/kubernetes/scheduler.yaml
+**************************************************************************
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    component: kube-scheduler
+  name: kube-scheduler
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - image: registry.k8s.io/kube-scheduler:v1.28.3
+    name: kube-scheduler
+    command:
+    - kube-scheduler
+    - --kubeconfig=/var/lib/kubernetes/kube-scheduler.kubeconfig
+    - --v=2
+    volumeMounts:
+    - mountPath: /var/lib/kubernetes
+      name: k8s-certs
+  volumes:
+    - hostPath:
+        path: /var/lib/kubernetes
+        type: DirectoryOrCreate
+      name: k8s-certs
+**************************************************************************
+
+
+Generate Service account certs (crt & key):
+===========================================
+vi /root/k8s/certs/ca.conf
+**************************************************************************************
+# Scheduler
+[kube-scheduler]
+distinguished_name = kube-scheduler_distinguished_name
+prompt             = no
+req_extensions     = kube-scheduler_req_extensions
+
+[kube-scheduler_req_extensions]
+basicConstraints     = CA:FALSE
+extendedKeyUsage     = clientAuth, serverAuth
+keyUsage             = critical, digitalSignature, keyEncipherment
+nsCertType           = client
+nsComment            = "Kube Scheduler Certificate"
+subjectAltName       = DNS:kube-scheduler, IP:127.0.0.1
+subjectKeyIdentifier = hash
+
+[kube-scheduler_distinguished_name]
+CN = system:kube-scheduler
+O  = system:system:kube-scheduler
+C  = US
+ST = Washington
+L  = Seattle
+**************************************************************************************
+
+cd /root/k8s/certs
+openssl genrsa -out kube-scheduler.key 4096
+openssl req -new -key kube-scheduler.key -sha256 -config ca.conf -section kube-scheduler -out kube-scheduler.csr
+openssl x509 -req -days 3653 -in kube-scheduler.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out kube-scheduler.crt
+mv kube-scheduler.crt /var/lib/kubernetes
+mv kube-scheduler.key /var/lib/kubernetes
+
+
+vi /var/lib/kubernetes/kube-scheduler.kubeconfig
+**************************************************************************************
+apiVersion: v1
+kind: Config
+clusters:
+- name: local
+  cluster:
+    certificate-authority: /var/lib/kubernetes/ca.crt
+    server: https://kubernetes.svc.cluster.local:6443
+users:
+- name: kube-scheduler
+  user:
+    client-certificate: /var/lib/kubernetes/kube-scheduler.crt
+    client-key: /var/lib/kubernetes/kube-scheduler.key
+contexts:
+- context:
+    cluster: local
+    user: kube-scheduler
+  name: kube-scheduler-context
+current-context: kube-scheduler-context
+**************************************************************************************
+
+
+mv /etc/kubernetes/scheduler.yaml /etc/kubernetes/manifests/

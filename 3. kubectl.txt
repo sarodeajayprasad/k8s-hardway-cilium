@@ -1,0 +1,63 @@
+*** This file has commands to Download, install and configure kubectl & its certs. ***
+
+kubelet installation:
+=====================
+mkdir -p /root/k8s/kubectl
+cd /root/k8s/kubectl
+wget -q –https-only –show-progress –timestamping https://storage.googleapis.com/kubernetes-release/release/v1.28.3/bin/linux/amd64/kubectl
+chmod +x kubectl
+mv kubectl /usr/local/bin
+kubectl version --client
+
+configure kubectl:
+==================
+mkdir -p /root/.kube
+vi /root/.kube/config
+*******************************************************************
+apiVersion: v1
+kind: Config
+clusters:
+- name: local
+  cluster:
+    certificate-authority: /var/lib/kubelet/ca.crt
+    server: https://kubernetes.svc.cluster.local:6443
+users:
+- name: admin
+  user:
+    client-certificate: /root/k8s/certs/admin.crt
+    client-key: /root/k8s/certs/admin.key
+contexts:
+- context:
+    cluster: local
+    user: admin
+  name: admin-context
+current-context: admin-context
+*******************************************************************
+
+Generate kubectl admin Certs(key & crt):
+========================================
+vi /root/k8s/certs/ca.conf
+*******************************************************************
+[admin]
+distinguished_name = admin_distinguished_name
+prompt             = no
+req_extensions     = default_req_extensions
+
+[admin_distinguished_name]
+CN = admin
+O  = system:masters
+
+[default_req_extensions]
+basicConstraints     = CA:FALSE
+extendedKeyUsage     = clientAuth
+keyUsage             = critical, digitalSignature, keyEncipherment
+nsCertType           = client
+nsComment            = "Admin Client Certificate"
+subjectKeyIdentifier = hash
+*******************************************************************
+
+cd /root/k8s/certs
+openssl genrsa -out admin.key 4096
+openssl req -new -key admin.key -sha256 -config ca.conf -section admin -out admin.csr
+openssl x509 -req -days 3653 -in admin.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out admin.crt
+

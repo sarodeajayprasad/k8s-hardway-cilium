@@ -1,0 +1,111 @@
+*** This file has commands to configure apiserver & its certs. This file also has commands for service accounts cert creation. apiserver is run as a static pod***
+
+mkdir -p /etc/kubernetes/manifests
+mkdir -p /var/lib/kubernetes
+vi /etc/kubernetes/apiserver.yaml
+**************************************************************************************
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    component: kube-apiserver
+  name: kube-apiserver
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - image: registry.k8s.io/kube-apiserver:v1.28.3
+    name: kube-apiserver
+    command:
+    - kube-apiserver
+    - --allow-privileged=true
+    - --authorization-mode=Node,RBAC
+    - --client-ca-file=/var/lib/kubernetes/ca.crt
+    - --enable-admission-plugins=NodeRestriction
+    - --enable-bootstrap-token-auth=true
+    - --etcd-servers=http://10.128.0.5:2379
+    - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+    - --secure-port=6443
+    - --service-account-issuer=https://kubernetes.default.svc.cluster.local
+    - --service-account-key-file=/var/lib/kubernetes/service-accounts.crt
+    - --service-account-signing-key-file=/var/lib/kubernetes/service-accounts.key
+    - --service-cluster-ip-range=10.96.0.0/12
+    - --tls-cert-file=/var/lib/kubernetes/kube-api-server.crt
+    - --tls-private-key-file=/var/lib/kubernetes/kube-api-server.key
+    volumeMounts:
+    - mountPath: /var/lib/kubernetes
+      name: k8s-certs
+  volumes:
+    - hostPath:
+        path: /var/lib/kubernetes
+        type: DirectoryOrCreate
+      name: k8s-certs
+**************************************************************************************
+
+Generate API server certs(crt & key):
+=====================================
+vi /root/k8s/certs/ca.conf
+**************************************************************************
+[kube-api-server]
+distinguished_name = kube-api-server_distinguished_name
+prompt             = no
+req_extensions     = kube-api-server_req_extensions
+
+[kube-api-server_req_extensions]
+basicConstraints     = CA:FALSE
+extendedKeyUsage     = clientAuth, serverAuth
+keyUsage             = critical, digitalSignature, keyEncipherment
+nsCertType           = client
+nsComment            = "Kube Scheduler Certificate"
+subjectAltName       = @kube-api-server_alt_names
+subjectKeyIdentifier = hash
+
+[kube-api-server_alt_names]
+IP.0  = 127.0.0.1
+IP.1  = 10.32.0.1
+DNS.0 = kubernetes
+DNS.1 = kubernetes.default
+DNS.2 = kubernetes.default.svc
+DNS.3 = kubernetes.default.svc.cluster
+DNS.4 = kubernetes.svc.cluster.local
+DNS.5 = server.kubernetes.local
+DNS.6 = api-server.kubernetes.local
+
+[kube-api-server_distinguished_name]
+CN = kubernetes
+C  = US
+ST = Washington
+L  = Seattle
+**************************************************************************
+cd /root/k8s/certs
+openssl genrsa -out kube-api-server.key 4096
+openssl req -new -key kube-api-server.key -sha256 -config ca.conf -section kube-api-server -out kube-api-server.csr
+openssl x509 -req -days 3653 -in kube-api-server.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out kube-api-server.crt
+
+cp ca.crt /var/lib/kubernetes 
+mv kube-api-server.crt /var/lib/kubernetes
+mv kube-api-server.key /var/lib/kubernetes
+
+
+Generate Service account certs (crt & key):
+===========================================
+vi /root/k8s/certs/ca.conf
+*******************************************
+[service-accounts]
+distinguished_name = service-accounts_distinguished_name
+prompt             = no
+req_extensions     = default_req_extensions
+
+[service-accounts_distinguished_name]
+CN = service-accounts
+*******************************************
+
+cd /root/k8s/certs
+openssl genrsa -out service-accounts.key 4096
+openssl req -new -key service-accounts.key -sha256 -config ca.conf -section service-accounts -out service-accounts.csr
+openssl x509 -req -days 3653 -in service-accounts.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out service-accounts.crt
+
+mv service-accounts.crt /var/lib/kubernetes
+mv service-accounts.key /var/lib/kubernetes
+
+mv /etc/kubernetes/apiserver.yaml /etc/kubernetes/manifests/

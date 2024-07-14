@@ -1,0 +1,71 @@
+vi /root/.bashrc
+PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u\[\033[00m\]@\[\033[01;34m\]\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
+
+mkdir k8s
+
+***This file includes runc instllation, containerd installation & configuration.***
+
+Runc instllation:
+=================
+wget -q --https-only --show-progress --timestamping https://github.com/opencontainers/runc/releases/download/v1.1.9/runc.amd64
+mv runc.amd64 runc
+chmod 700 runc
+mv runc /usr/local/bin
+
+Containerd Installation & startup:
+================================
+Containerd will run as systemd
+Refer this for more info https://github.com/containerd/containerd/blob/main/docs/getting-started.md
+wget -q --https-only --show-progress --timestamping https://github.com/containerd/containerd/releases/download/v1.7.8/containerd-1.7.8-linux-amd64.tar.gz
+mkdir containerd
+tar -xvzf containerd-1.7.8-linux-amd64.tar.gz -C containerd
+mv containerd/bin/* /bin
+
+create containerd.service in /etc/systemd/system directory
+vi containerd.service
+************************************************************
+[Unit]
+Description=containerd container runtime
+Documentation=https://containerd.io
+After=network.target
+
+[Service]
+ExecStartPre=/sbin/modprobe overlay
+ExecStart=/bin/containerd
+Restart=always
+RestartSec=5
+Delegate=yes
+KillMode=process
+OOMScoreAdjust=-999
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+
+[Install]
+WantedBy=multi-user.target
+************************************************************
+
+Containerd configuration:
+==========================
+mkdir -p /etc/containerd
+vi config.toml
+**************************************************************************
+version = 2
+
+[plugins."io.containerd.grpc.v1.cri"]
+  [plugins."io.containerd.grpc.v1.cri".containerd]
+    snapshotter = "overlayfs"
+    default_runtime_name = "runc"
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+    runtime_type = "io.containerd.runc.v2"
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+    SystemdCgroup = true
+[plugins."io.containerd.grpc.v1.cri".cni]
+  bin_dir = "/opt/cni/bin"
+  conf_dir = "/etc/cni/net.d"
+**************************************************************************
+
+systemctl daemon-reload
+systemctl enable containerd
+systemctl start containerd
+systemctl status containerd

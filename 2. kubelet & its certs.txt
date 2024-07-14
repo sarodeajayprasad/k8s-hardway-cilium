@@ -1,0 +1,144 @@
+*** This file has commands to Download, install and configure kubelet & its certs. ***
+
+vi /etc/hosts
+**********************************************************
+10.128.0.6 kubernetes.svc.cluster.local aj-master-2.us-central1-c.c.aerial-day-428404-m5.internal aj-master-2  # Added by Google
+**********************************************************
+
+kubelet installation:
+=====================
+wget -q --https-only --show-progress –timestamping    https://storage.googleapis.com/kubernetes-release/release/v1.28.3/bin/linux/amd64/kubelet
+mkdir -p /var/lib/kubelet
+chmod +x kubelet
+mv kubelet /usr/local/bin
+
+configure kubelet:
+==================
+create kubelet.service file
+vi /etc/systemd/system/kubelet.service
+************************************************************
+[Unit]
+After=containerd.service
+Requires=containerd.service
+
+[Service]
+ExecStart=/usr/local/bin/kubelet \
+  --config=/var/lib/kubelet/kubelet-config.yaml \
+  --kubeconfig=/var/lib/kubelet/kubeconfig \
+  --register-node=true \
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+************************************************************
+
+create kubelet-config.yaml & kubeconfig
+
+vi /var/lib/kubelet/kubelet-config.yaml
+************************************************************
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+staticPodPath: "/etc/kubernetes/manifests"
+authentication:
+  anonymous:
+    enabled: false
+  webhook:
+    enabled: true
+  x509:
+    clientCAFile: "/var/lib/kubelet/ca.crt"
+authorization:
+  mode: Webhook
+clusterDomain: "cluster.local"
+clusterDNS:
+  - "10.32.0.10"
+cgroupDriver: systemd
+containerRuntimeEndpoint: "unix:///var/run/containerd/containerd.sock"
+podCIDR: "10.200.0.0/24"
+resolvConf: "/etc/resolv.conf"
+runtimeRequestTimeout: "15m"
+************************************************************
+
+vi /var/lib/kubelet/kubeconfig
+************************************************************
+apiVersion: v1
+kind: Config
+clusters:
+- name: local
+  cluster:
+    certificate-authority: /var/lib/kubelet/ca.crt
+    server: https://kubernetes.svc.cluster.local:6443
+users:
+- name: masterkubelet
+  user:
+    client-certificate: /var/lib/kubelet/kubelet.crt
+    client-key: /var/lib/kubelet/kubelet.key
+contexts:
+- context:
+    cluster: local
+    user: masterkubelet
+  name: masterkubelet-context
+current-context: masterkubelet-context
+************************************************************
+
+Generate CA Certs(key & crt), kubelet certs(key & crt):
+=======================================================
+mkdir -p /root/k8s/certs
+vi /root/k8s/certs/ca.conf
+***************************************************************
+[req]
+distinguished_name = req_distinguished_name
+prompt             = no
+x509_extensions    = ca_x509_extensions
+
+[ca_x509_extensions]
+basicConstraints = CA:TRUE
+keyUsage         = cRLSign, keyCertSign
+
+[req_distinguished_name]
+C   = US
+ST  = Washington
+L   = Seattle
+CN  = CA
+***************************************************************
+cd /root/k8s/certs
+openssl genrsa -out ca.key 4096
+openssl req -x509 -new -sha512 -noenc -key ca.key -days 3653 -config ca.conf -out ca.crt
+
+vi /root/k8s/certs/ca.conf
+***************************************************************
+[master-node]
+distinguished_name = master-node_distinguished_name
+prompt             = no
+req_extensions     = master-node_req_extensions
+
+[master-node_req_extensions]
+basicConstraints     = CA:FALSE
+extendedKeyUsage     = clientAuth, serverAuth
+keyUsage             = critical, digitalSignature, keyEncipherment
+nsCertType           = client
+nsComment            = "master-node Certificate"
+subjectAltName       = DNS:aj-master.us-central1-c.c.aerial-day-428404-m5.internal, IP:127.0.0.1
+subjectKeyIdentifier = hash
+
+[master-node_distinguished_name]
+CN = system:node:aj-master
+O  = system:nodes
+C  = US
+ST = Washington
+L  = Seattle
+***************************************************************
+cd /root/k8s/certs
+openssl genrsa -out master-node.key 4096
+openssl req -new -key  master-node.key -sha256 -config ca.conf -section master-node -out master-node.csr
+openssl x509 -req -days 3653 -in master-node.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out master-node.crt
+
+cp ca.crt /var/lib/kubelet/ca.crt
+mv master-node.crt /var/lib/kubelet/kubelet.crt
+mv master-node.key /var/lib/kubelet/kubelet.key
+
+systemctl daemon-reload
+systemctl enable kubelet
+systemctl start kubelet
+systemctl status kubelet
