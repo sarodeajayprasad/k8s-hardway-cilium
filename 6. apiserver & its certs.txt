@@ -23,8 +23,10 @@ spec:
     - --client-ca-file=/var/lib/kubernetes/ca.crt
     - --enable-admission-plugins=NodeRestriction
     - --enable-bootstrap-token-auth=true
-    - --etcd-servers=http://10.128.0.5:2379
+    - --etcd-servers=http://10.128.0.8:2379
     - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+    - --kubelet-client-certificate=/var/lib/kubernetes/kubelet.crt
+    - --kubelet-client-key=/var/lib/kubernetes/kubelet.key
     - --secure-port=6443
     - --service-account-issuer=https://kubernetes.default.svc.cluster.local
     - --service-account-key-file=/var/lib/kubernetes/service-accounts.crt
@@ -107,5 +109,8 @@ openssl x509 -req -days 3653 -in service-accounts.csr -copy_extensions copyall -
 
 mv service-accounts.crt /var/lib/kubernetes
 mv service-accounts.key /var/lib/kubernetes
+
+cd /var/lib/kubelet
+cp kubelet.crt kubelet.key /var/lib/kubernetes/
 
 mv /etc/kubernetes/apiserver.yaml /etc/kubernetes/manifests/

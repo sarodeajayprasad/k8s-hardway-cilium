@@ -1,0 +1,12 @@
+Install helm
+==============================================================================================================
+curl https://baltocdn.com/helm/signing.asc | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+sudo apt-get install apt-transport-https --yes
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install helm
+
+Add cilium repo
+===============
+helm repo add cilium https://helm.cilium.io/
+helm install cilium cilium/cilium --version 1.10.14 --namespace kube-system   --set kubeProxyReplacement=strict   --set cni.chainingMode=none   --set ipam.mode=kubernetes   --set k8sServiceHost=kubernetes.svc.cluster.local   --set k8sServicePort=6443   --set nodePort.enabled=true   --set hostServices.enabled=true   --set externalIPs.enabled=true   --set hostPort.enabled=true   --set operator.replicas=1
