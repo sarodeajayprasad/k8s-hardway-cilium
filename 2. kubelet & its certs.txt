@@ -2,7 +2,10 @@
 
 vi /etc/hosts
 **********************************************************
-10.128.0.6 kubernetes.svc.cluster.local aj-master-2.us-central1-c.c.aerial-day-428404-m5.internal aj-master-2  # Added by Google
+10.128.0.19 etcd-0.us-central1-c.c.aerial-day-428404-m5.internal etcd-0
+10.128.0.17 master-0.us-central1-c.c.aerial-day-428404-m5.internal master-0
+10.128.0.16 etcd-1.us-central1-c.c.aerial-day-428404-m5.internal etcd-1
+10.128.0.18 etcd-2.us-central1-c.c.aerial-day-428404-m5.internal etcd-2 
 **********************************************************
 
 kubelet installation:
@@ -96,10 +99,10 @@ basicConstraints = CA:TRUE
 keyUsage         = cRLSign, keyCertSign
 
 [req_distinguished_name]
-C   = US
-ST  = Washington
-L   = Seattle
-CN  = CA
+C   = INDIA
+ST  = Karnataka
+L   = Bangalore
+CN  = ca
 ***************************************************************
 cd /root/k8s/certs
 openssl genrsa -out ca.key 4096
