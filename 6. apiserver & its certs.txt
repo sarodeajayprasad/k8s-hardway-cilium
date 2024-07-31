@@ -75,9 +75,9 @@ DNS.6 = api-server.kubernetes.local
 
 [kube-api-server_distinguished_name]
 CN = kubernetes
-C  = US
-ST = Washington
-L  = Seattle
+C  = IN
+ST = Karnataka
+L  = Bengaluru
 **************************************************************************
 cd /root/k8s/certs
 openssl genrsa -out kube-api-server.key 4096

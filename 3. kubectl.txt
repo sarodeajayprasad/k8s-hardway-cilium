@@ -62,4 +62,5 @@ cd /root/k8s/certs
 openssl genrsa -out admin.key 4096
 openssl req -new -key admin.key -sha256 -config ca.conf -section admin -out admin.csr
 openssl x509 -req -days 3653 -in admin.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out admin.crt
+rm -rf admin.csr ca.srl 
 

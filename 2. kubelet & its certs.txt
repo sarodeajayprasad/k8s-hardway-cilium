@@ -3,7 +3,7 @@
 vi /etc/hosts
 **********************************************************
 10.128.0.19 etcd-0.us-central1-c.c.aerial-day-428404-m5.internal etcd-0
-10.128.0.17 master-0.us-central1-c.c.aerial-day-428404-m5.internal master-0
+10.128.0.17 kubernetes.svc.cluster.local master-0.us-central1-c.c.aerial-day-428404-m5.internal master-0
 10.128.0.16 etcd-1.us-central1-c.c.aerial-day-428404-m5.internal etcd-1
 10.128.0.18 etcd-2.us-central1-c.c.aerial-day-428404-m5.internal etcd-2 
 **********************************************************
@@ -134,35 +134,43 @@ cd /root/k8s/certs
 etcd-0
 *******
 openssl genrsa -out etcd-0.key 4096
-openssl req -new -key etcd-0.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:etcd-0" -out etcd-0.csr
+openssl req -new -key etcd-0.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:etcd-0/O=system:nodes/C=IN/ST=Karnataka/L=Bengaluru" -out etcd-0.csr
 openssl x509 -req -days 3653 -in etcd-0.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out etcd-0.crt
 rm -rf etcd-0.csr
 
 scp ca.crt root@etcd-0:/var/lib/kubelet/ca.crt
-mv master-0.crt /var/lib/kubelet/kubelet.crt
-mv master-0.key /var/lib/kubelet/kubelet.key
+scp etcd-0.crt root@etcd-0:/var/lib/kubelet/kubelet.crt
+scp etcd-0.key root@etcd-0:/var/lib/kubelet/kubelet.key
 *******
 
 etcd-1
 *******
 openssl genrsa -out etcd-1.key 4096
-openssl req -new -key etcd-1.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:etcd-1" -out etcd-1.csr
+openssl req -new -key etcd-1.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:etcd-1/O=system:nodes/C=IN/ST=Karnataka/L=Bengaluru" -out etcd-1.csr
 openssl x509 -req -days 3653 -in etcd-1.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out etcd-1.crt
 rm -rf etcd-1.csr
+
+scp ca.crt root@etcd-1:/var/lib/kubelet/ca.crt
+scp etcd-1.crt root@etcd-1:/var/lib/kubelet/kubelet.crt
+scp etcd-1.key root@etcd-1:/var/lib/kubelet/kubelet.key
 *******
 
 etcd-2
 *******
 openssl genrsa -out etcd-2.key 4096
-openssl req -new -key etcd-2.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:etcd-2" -out etcd-2.csr
+openssl req -new -key etcd-2.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:etcd-2/O=system:nodes/C=IN/ST=Karnataka/L=Bengaluru" -out etcd-2.csr
 openssl x509 -req -days 3653 -in etcd-2.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out etcd-2.crt
 rm -rf etcd-2.csr
+
+scp ca.crt root@etcd-2:/var/lib/kubelet/ca.crt
+scp etcd-2.crt root@etcd-2:/var/lib/kubelet/kubelet.crt
+scp etcd-2.key root@etcd-2:/var/lib/kubelet/kubelet.key
 *******
 
 master-0
 *******
 openssl genrsa -out master-0.key 4096
-openssl req -new -key master-0.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:master-0" -out master-0.csr
+openssl req -new -key master-0.key -sha256 -config ca.conf -extensions worker-node_req_extensions -subj "/CN=system:node:master-0/O=system:nodes/ C=IN/ST=Karnataka/L=Bengaluru" -out master-0.csr
 openssl x509 -req -days 3653 -in master-0.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out master-0.crt
 rm -rf master-0.csr
 
@@ -175,3 +183,4 @@ systemctl daemon-reload
 systemctl enable kubelet
 systemctl start kubelet
 systemctl status kubelet
+

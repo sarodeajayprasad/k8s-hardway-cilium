@@ -117,3 +117,5 @@ spec:
       type: DirectoryOrCreate
     name: etcd-data
 **************************************************************************
+
+etcdctl endpoint status --cluster -w table

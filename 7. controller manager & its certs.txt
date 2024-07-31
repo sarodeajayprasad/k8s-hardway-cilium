@@ -61,9 +61,9 @@ subjectKeyIdentifier = hash
 [kube-controller-manager_distinguished_name]
 CN = system:kube-controller-manager
 O  = system:kube-controller-manager
-C  = US
-ST = Washington
-L  = Seattle
+C  = IN
+ST = Karnataka
+L  = Bengaluru
 **************************************************************************************
 
 cd /root/k8s/certs

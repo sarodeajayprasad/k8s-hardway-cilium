@@ -51,9 +51,9 @@ subjectKeyIdentifier = hash
 [kube-scheduler_distinguished_name]
 CN = system:kube-scheduler
 O  = system:system:kube-scheduler
-C  = US
-ST = Washington
-L  = Seattle
+C  = IN
+ST = Karnataka
+L  = Bengaluru
 **************************************************************************************
 
 cd /root/k8s/certs
