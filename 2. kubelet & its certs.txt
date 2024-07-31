@@ -99,10 +99,10 @@ basicConstraints = CA:TRUE
 keyUsage         = cRLSign, keyCertSign
 
 [req_distinguished_name]
-C   = INDIA
+C   = IN
 ST  = Karnataka
 L   = Bangalore
-CN  = ca
+CN  = kube-ca
 ***************************************************************
 cd /root/k8s/certs
 openssl genrsa -out ca.key 4096
@@ -110,35 +110,66 @@ openssl req -x509 -new -sha512 -noenc -key ca.key -days 3653 -config ca.conf -ou
 
 vi /root/k8s/certs/ca.conf
 ***************************************************************
-[master-node]
-distinguished_name = master-node_distinguished_name
+[worker-node]
+distinguished_name = worker-node_distinguished_name
 prompt             = no
-req_extensions     = master-node_req_extensions
+req_extensions     = worker-node_req_extensions
 
-[master-node_req_extensions]
+[worker-node_req_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
 nsCertType           = client
-nsComment            = "master-node Certificate"
-subjectAltName       = DNS:aj-master.us-central1-c.c.aerial-day-428404-m5.internal, IP:127.0.0.1
+nsComment            = "worker-node Certificate"
 subjectKeyIdentifier = hash
 
-[master-node_distinguished_name]
-CN = system:node:aj-master
+[worker-node_distinguished_name]
 O  = system:nodes
-C  = US
-ST = Washington
-L  = Seattle
+C  = IN
+ST = Karnataka
+L  = Bengaluru
 ***************************************************************
 cd /root/k8s/certs
-openssl genrsa -out master-node.key 4096
-openssl req -new -key  master-node.key -sha256 -config ca.conf -section master-node -out master-node.csr
-openssl x509 -req -days 3653 -in master-node.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out master-node.crt
+
+etcd-0
+*******
+openssl genrsa -out etcd-0.key 4096
+openssl req -new -key etcd-0.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:etcd-0" -out etcd-0.csr
+openssl x509 -req -days 3653 -in etcd-0.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out etcd-0.crt
+rm -rf etcd-0.csr
+
+scp ca.crt root@etcd-0:/var/lib/kubelet/ca.crt
+mv master-0.crt /var/lib/kubelet/kubelet.crt
+mv master-0.key /var/lib/kubelet/kubelet.key
+*******
+
+etcd-1
+*******
+openssl genrsa -out etcd-1.key 4096
+openssl req -new -key etcd-1.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:etcd-1" -out etcd-1.csr
+openssl x509 -req -days 3653 -in etcd-1.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out etcd-1.crt
+rm -rf etcd-1.csr
+*******
+
+etcd-2
+*******
+openssl genrsa -out etcd-2.key 4096
+openssl req -new -key etcd-2.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:etcd-2" -out etcd-2.csr
+openssl x509 -req -days 3653 -in etcd-2.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out etcd-2.crt
+rm -rf etcd-2.csr
+*******
+
+master-0
+*******
+openssl genrsa -out master-0.key 4096
+openssl req -new -key master-0.key -sha256 -config ca.conf -section worker-node -reqexts worker-node_req_extensions -subj "/CN=system:node:master-0" -out master-0.csr
+openssl x509 -req -days 3653 -in master-0.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out master-0.crt
+rm -rf master-0.csr
 
 cp ca.crt /var/lib/kubelet/ca.crt
-mv master-node.crt /var/lib/kubelet/kubelet.crt
-mv master-node.key /var/lib/kubelet/kubelet.key
+mv master-0.crt /var/lib/kubelet/kubelet.crt
+mv master-0.key /var/lib/kubelet/kubelet.key
+*******
 
 systemctl daemon-reload
 systemctl enable kubelet
