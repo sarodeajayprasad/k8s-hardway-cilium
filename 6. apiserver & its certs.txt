@@ -23,7 +23,7 @@ spec:
     - --client-ca-file=/var/lib/kubernetes/ca.crt
     - --enable-admission-plugins=NodeRestriction
     - --enable-bootstrap-token-auth=true
-    - --etcd-servers=http://10.128.0.8:2379
+    - --etcd-servers=http://10.128.0.21:2379,http://10.128.0.22:2379,http://10.128.0.23:2379
     - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
     - --kubelet-client-certificate=/var/lib/kubernetes/kubelet.crt
     - --kubelet-client-key=/var/lib/kubernetes/kubelet.key

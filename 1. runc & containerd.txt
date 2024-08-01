@@ -2,7 +2,7 @@ vi /root/.bashrc
 PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u\[\033[00m\]@\[\033[01;34m\]\h\[\033[00m\]:\[\033[01;36m\]\w\[\033[00m\]\$ '
 alias k=kubectl
 
-mkdir k8s
+mkdir /root/k8s
 cd k8s
 
 ***This file includes runc instllation, containerd installation & configuration.***
