@@ -28,12 +28,12 @@ spec:
     args:
     - /usr/local/bin/etcd
     - --name=etcd0
-    - --advertise-client-urls=http://10.128.0.22:2379
+    - --advertise-client-urls=http://10.128.0.8:2379
     - --listen-client-urls=http://0.0.0.0:2379
     - --listen-peer-urls=http://0.0.0.0:2380
     - --data-dir=/var/lib/etcd
-    - --initial-advertise-peer-urls=http://10.128.0.22:2380
-    - --initial-cluster=etcd0=http://10.128.0.22:2380,etcd1=http://10.128.0.23:2380,etcd2=http://10.128.0.21:2380
+    - --initial-advertise-peer-urls=http://10.128.0.8:2380
+    - --initial-cluster=etcd0=http://10.128.0.8:2380,etcd1=http://10.128.0.9:2380,etcd2=http://10.128.0.7:2380
     - --initial-cluster-state=new
     - --initial-cluster-token=etcd-cluster-token
     volumeMounts:
@@ -64,12 +64,12 @@ spec:
     args:
     - /usr/local/bin/etcd
     - --name=etcd1
-    - --advertise-client-urls=http://10.128.0.23:2379
+    - --advertise-client-urls=http://10.128.0.9:2379
     - --listen-client-urls=http://0.0.0.0:2379
     - --listen-peer-urls=http://0.0.0.0:2380
     - --data-dir=/var/lib/etcd
-    - --initial-advertise-peer-urls=http://10.128.0.23:2380
-    - --initial-cluster=etcd0=http://10.128.0.22:2380,etcd1=http://10.128.0.23:2380,etcd2=http://10.128.0.21:2380
+    - --initial-advertise-peer-urls=http://10.128.0.9:2380
+    - --initial-cluster=etcd0=http://10.128.0.8:2380,etcd1=http://10.128.0.9:2380,etcd2=http://10.128.0.7:2380
     - --initial-cluster-state=new
     - --initial-cluster-token=etcd-cluster-token
     volumeMounts:
@@ -100,12 +100,12 @@ spec:
     args:
     - /usr/local/bin/etcd
     - --name=etcd2
-    - --advertise-client-urls=http://10.128.0.21:2379
+    - --advertise-client-urls=http://10.128.0.7:2379
     - --listen-client-urls=http://0.0.0.0:2379
     - --listen-peer-urls=http://0.0.0.0:2380
     - --data-dir=/var/lib/etcd
-    - --initial-advertise-peer-urls=http://10.128.0.21:2380
-    - --initial-cluster=etcd0=http://10.128.0.22:2380,etcd1=http://10.128.0.23:2380,etcd2=http://10.128.0.21:2380
+    - --initial-advertise-peer-urls=http://10.128.0.7:2380
+    - --initial-cluster=etcd0=http://10.128.0.8:2380,etcd1=http://10.128.0.9:2380,etcd2=http://10.128.0.7:2380
     - --initial-cluster-state=new
     - --initial-cluster-token=etcd-cluster-token
     volumeMounts:

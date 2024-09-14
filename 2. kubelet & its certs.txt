@@ -2,10 +2,10 @@
 
 vi /etc/hosts
 **********************************************************
-10.128.0.22 etcd-0.us-central1-c.c.aerial-day-428404-m5.internal etcd-0
-10.128.0.20 kubernetes.svc.cluster.local master-0.us-central1-c.c.aerial-day-428404-m5.internal master-0
-10.128.0.23 etcd-1.us-central1-c.c.aerial-day-428404-m5.internal etcd-1
-10.128.0.21 etcd-2.us-central1-c.c.aerial-day-428404-m5.internal etcd-2 
+10.128.0.8 etcd-0.us-central1-c.c.k8s-hardway-434004.internal etcd-0
+10.128.0.6 kubernetes.svc.cluster.local master-0.us-central1-c.c.k8s-hardway-434004.internal master-0
+10.128.0.9 etcd-1.us-central1-c.c.k8s-hardway-434004.internal etcd-1
+10.128.0.7 etcd-2.us-central1-c.c.k8s-hardway-434004.internal etcd-2 
 **********************************************************
 
 ssh-keygen -t rsa -b 4096
