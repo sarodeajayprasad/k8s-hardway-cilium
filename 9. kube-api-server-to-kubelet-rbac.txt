@@ -32,7 +32,7 @@ roleRef:
 subjects:
   - apiGroup: rbac.authorization.k8s.io
     kind: User
-    name: system:node:aj-master
+    name: system:node:master-0
 *************************************
 
 k apply -f /root/k8s/apiserver-to-kubelet.yaml

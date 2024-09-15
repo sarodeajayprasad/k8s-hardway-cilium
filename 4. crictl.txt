@@ -1,4 +1,4 @@
-*** This file has commands to Download, install and configure crictl ***
+*** This file has commands to Download, install and configure crictl. This has to be executed on all the nodes. ***
 
 mkdir -p /root/k8s/crictl
 cd /root/k8s/crictl

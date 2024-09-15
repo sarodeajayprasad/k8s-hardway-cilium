@@ -29,7 +29,7 @@ spec:
 **************************************************************************
 
 
-Generate Service account certs (crt & key):
+Generate scheduler certs (crt & key):
 ===========================================
 vi /root/k8s/certs/ca.conf
 **************************************************************************************
@@ -50,10 +50,6 @@ subjectKeyIdentifier = hash
 
 [kube-scheduler_distinguished_name]
 CN = system:kube-scheduler
-O  = system:system:kube-scheduler
-C  = US
-ST = Washington
-L  = Seattle
 **************************************************************************************
 
 cd /root/k8s/certs

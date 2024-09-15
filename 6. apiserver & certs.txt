@@ -23,7 +23,7 @@ spec:
     - --client-ca-file=/var/lib/kubernetes/ca.crt
     - --enable-admission-plugins=NodeRestriction
     - --enable-bootstrap-token-auth=true
-    - --etcd-servers=http://10.128.0.8:2379
+    - --etcd-servers=http://10.128.0.13:2379
     - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
     - --kubelet-client-certificate=/var/lib/kubernetes/kubelet.crt
     - --kubelet-client-key=/var/lib/kubernetes/kubelet.key
@@ -74,10 +74,7 @@ DNS.5 = server.kubernetes.local
 DNS.6 = api-server.kubernetes.local
 
 [kube-api-server_distinguished_name]
-CN = kubernetes
-C  = US
-ST = Washington
-L  = Seattle
+CN = kube-apiserver
 **************************************************************************
 cd /root/k8s/certs
 openssl genrsa -out kube-api-server.key 4096

@@ -39,7 +39,7 @@ spec:
 **************************************************************************
 
 
-Generate Service account certs (crt & key):
+Generate controller manager certs (crt & key):
 ===========================================
 vi /root/k8s/certs/ca.conf
 **************************************************************************************
@@ -60,10 +60,6 @@ subjectKeyIdentifier = hash
 
 [kube-controller-manager_distinguished_name]
 CN = system:kube-controller-manager
-O  = system:kube-controller-manager
-C  = US
-ST = Washington
-L  = Seattle
 **************************************************************************************
 
 cd /root/k8s/certs

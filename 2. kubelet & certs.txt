@@ -1,9 +1,16 @@
-*** This file has commands to Download, install and configure kubelet & its certs. ***
+*** This file has commands to Download, install and configure kubelet & its certs on all the 3 nodes. So, the certs too are generated for master, etcd & minion. These certs are configured in kubeconfig file.***
 
 vi /etc/hosts
 **********************************************************
-10.128.0.6 kubernetes.svc.cluster.local aj-master-2.us-central1-c.c.aerial-day-428404-m5.internal aj-master-2  # Added by Google
+10.128.0.13 etcd-0.us-central1-c.c.k8s-hardway-434004.internal etcd-0  # Added by Google
+10.128.0.14 kubernetes.svc.cluster.local master-0.us-central1-c.c.k8s-hardway-434004.internal master-0  # Added by Google
+10.128.0.15 minion-0.us-central1-c.c.k8s-hardway-434004.internal minion-0  # Added by Google
 **********************************************************
+
+ssh-keygen -t rsa -b 4096
+vi /root/.ssh/authorized_keys
+sudo sed -i 's/^#*PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config
+sudo systemctl restart sshd
 
 kubelet installation:
 =====================
@@ -69,16 +76,16 @@ clusters:
     certificate-authority: /var/lib/kubelet/ca.crt
     server: https://kubernetes.svc.cluster.local:6443
 users:
-- name: masterkubelet
+- name: kubelet
   user:
     client-certificate: /var/lib/kubelet/kubelet.crt
     client-key: /var/lib/kubelet/kubelet.key
 contexts:
 - context:
     cluster: local
-    user: masterkubelet
-  name: masterkubelet-context
-current-context: masterkubelet-context
+    user: kubelet
+  name: kubelet-context
+current-context: kubelet-context
 ************************************************************
 
 Generate CA Certs(key & crt), kubelet certs(key & crt):
@@ -96,10 +103,7 @@ basicConstraints = CA:TRUE
 keyUsage         = cRLSign, keyCertSign
 
 [req_distinguished_name]
-C   = US
-ST  = Washington
-L   = Seattle
-CN  = CA
+CN  = kube-ca
 ***************************************************************
 cd /root/k8s/certs
 openssl genrsa -out ca.key 4096
@@ -107,35 +111,59 @@ openssl req -x509 -new -sha512 -noenc -key ca.key -days 3653 -config ca.conf -ou
 
 vi /root/k8s/certs/ca.conf
 ***************************************************************
-[master-node]
-distinguished_name = master-node_distinguished_name
+[kubelet]
+distinguished_name = node_distinguished_name
 prompt             = no
-req_extensions     = master-node_req_extensions
+req_extensions     = node_req_extensions
 
-[master-node_req_extensions]
+[node_req_extensions]
 basicConstraints     = CA:FALSE
 extendedKeyUsage     = clientAuth, serverAuth
 keyUsage             = critical, digitalSignature, keyEncipherment
 nsCertType           = client
-nsComment            = "master-node Certificate"
-subjectAltName       = DNS:aj-master.us-central1-c.c.aerial-day-428404-m5.internal, IP:127.0.0.1
+nsComment            = "node Certificate"
 subjectKeyIdentifier = hash
 
-[master-node_distinguished_name]
-CN = system:node:aj-master
-O  = system:nodes
-C  = US
-ST = Washington
-L  = Seattle
+[node_distinguished_name]
+CN = kubelet-certs
 ***************************************************************
 cd /root/k8s/certs
-openssl genrsa -out master-node.key 4096
-openssl req -new -key  master-node.key -sha256 -config ca.conf -section master-node -out master-node.csr
-openssl x509 -req -days 3653 -in master-node.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out master-node.crt
+
+master-0
+*******
+openssl genrsa -out master-0.key 4096
+openssl req -new -key master-0.key -sha256 -config ca.conf -extensions node_req_extensions -subj "/CN=system:node:master-0/O=system:nodes" -out master-0.csr
+openssl x509 -req -days 3653 -in master-0.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out master-0.crt
+rm -rf master-0.csr ca.srl
 
 cp ca.crt /var/lib/kubelet/ca.crt
-mv master-node.crt /var/lib/kubelet/kubelet.crt
-mv master-node.key /var/lib/kubelet/kubelet.key
+mv master-0.crt /var/lib/kubelet/kubelet.crt
+mv master-0.key /var/lib/kubelet/kubelet.key
+*******
+
+etcd-0
+*******
+openssl genrsa -out etcd-0.key 4096
+openssl req -new -key etcd-0.key -sha256 -config ca.conf -section worker-node -reqexts node_req_extensions -subj "/CN=system:node:etcd-0/O=system:nodes" -out etcd-0.csr
+openssl x509 -req -days 3653 -in etcd-0.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out etcd-0.crt
+rm -rf etcd-0.csr ca.srl
+
+scp ca.crt root@etcd-0:/var/lib/kubelet/ca.crt
+scp etcd-0.crt root@etcd-0:/var/lib/kubelet/kubelet.crt
+scp etcd-0.key root@etcd-0:/var/lib/kubelet/kubelet.key
+*******
+
+minion-0
+*******
+openssl genrsa -out minion-0.key 4096
+openssl req -new -key minion-0.key -sha256 -config ca.conf -section worker-node -reqexts node_req_extensions -subj "/CN=system:node:minion-0/O=system:nodes" -out minion-0.csr
+openssl x509 -req -days 3653 -in minion-0.csr -copy_extensions copyall -sha256 -CA ca.crt -CAkey ca.key -CAcreateserial -out minion-0.crt
+rm -rf minion-0.csr ca.srl
+
+scp ca.crt root@minion-0:/var/lib/kubelet/ca.crt
+scp minion-0.crt root@minion-0:/var/lib/kubelet/kubelet.crt
+scp minion-0.key root@minion-0:/var/lib/kubelet/kubelet.key
+*******
 
 systemctl daemon-reload
 systemctl enable kubelet

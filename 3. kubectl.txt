@@ -1,4 +1,4 @@
-*** This file has commands to Download, install and configure kubectl & its certs. ***
+*** This file has commands to Download, install and configure kubectl & its certs. For now, these commands are executed only on master-0 node. ***
 
 kubelet installation:
 =====================
