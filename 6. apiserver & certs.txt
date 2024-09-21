@@ -34,6 +34,14 @@ spec:
     - --service-cluster-ip-range=10.96.0.0/12
     - --tls-cert-file=/var/lib/kubernetes/kube-api-server.crt
     - --tls-private-key-file=/var/lib/kubernetes/kube-api-server.key
+    - --enable-aggregator-routing=true
+    - --requestheader-client-ca-file=/var/lib/kubernetes/ca.crt
+    - --requestheader-allowed-names="*"
+    - --requestheader-extra-headers-prefix=X-Remote-Extra-
+    - --requestheader-group-headers=X-Remote-Group
+    - --requestheader-username-headers=X-Remote-User
+    - --proxy-client-cert-file=/var/lib/kubelet/kubelet.crt
+    - --proxy-client-key-file=/var/lib/kubelet/kubelet.key
     volumeMounts:
     - mountPath: /var/lib/kubernetes
       name: k8s-certs
@@ -64,7 +72,7 @@ subjectKeyIdentifier = hash
 
 [kube-api-server_alt_names]
 IP.0  = 127.0.0.1
-IP.1  = 10.32.0.1
+IP.1  = 10.96.0.1
 DNS.0 = kubernetes
 DNS.1 = kubernetes.default
 DNS.2 = kubernetes.default.svc
@@ -84,6 +92,7 @@ openssl x509 -req -days 3653 -in kube-api-server.csr -copy_extensions copyall -s
 cp ca.crt /var/lib/kubernetes 
 mv kube-api-server.crt /var/lib/kubernetes
 mv kube-api-server.key /var/lib/kubernetes
+rm -rf kube-api-server.csr ca.srl
 
 
 Generate Service account certs (crt & key):
