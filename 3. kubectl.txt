@@ -1,6 +1,6 @@
 *** This file has commands to Download, install and configure kubectl & its certs. ***
 
-kubelet installation:
+kubectl installation:
 =====================
 mkdir -p /root/k8s/kubectl
 cd /root/k8s/kubectl

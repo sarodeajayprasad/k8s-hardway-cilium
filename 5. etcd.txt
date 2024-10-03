@@ -8,6 +8,123 @@ wget -q --https-only --show-progress –timestamping https://github.com/etcd-io/
 tar -xvzf etcd-v3.4.27-linux-amd64.tar.gz
 mv etcd-v3.4.27-linux-amd64/etcdctl /usr/local/bin/
 
+
+mkdir -p /root/k8s/certs/etcd && cd /root/k8s/certs/etcd
+
+vi etcd.conf
+**************************************************************************
+[req]
+distinguished_name = req_distinguished_name
+prompt             = no
+x509_extensions    = ca_x509_extensions
+
+[ca_x509_extensions]
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid
+basicConstraints = CA:TRUE
+
+[req_distinguished_name]
+CN  = etcd-ca
+**************************************************************************
+
+openssl genrsa -out etcd-ca.key 4096
+openssl req -x509 -new -sha512 -noenc -key etcd-ca.key -days 3653 -config etcd.conf -out etcd-ca.crt
+
+vi etcd.conf
+**************************************************************************
+[etcd-0]
+distinguished_name = etcd_0_distinguished_name
+prompt             = no
+req_extensions    = etcd_0_req_extensions
+
+[etcd_0_req_extensions]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names_etcd_0
+extendedKeyUsage = serverAuth, clientAuth
+
+[alt_names_etcd_0]
+DNS.1=etcd-0
+DNS.2=etcd-0.us-central1-c.c.myk8sproject-437517.internal
+IP.1=10.128.0.7
+
+[etcd_0_distinguished_name]
+CN  = etcd-server
+**************************************************************************
+
+etcd-0 ssl certs
+***************
+openssl genrsa -out etcd-0.key 4096
+openssl req -new -key etcd-0.key -sha256 -config etcd.conf -section etcd-0 -reqexts etcd_0_req_extensions -out etcd-0.csr
+openssl x509 -req -days 3653 -in etcd-0.csr -copy_extensions copyall -sha256 -CA etcd-ca.crt -CAkey etcd-ca.key -CAcreateserial -out etcd-0.crt
+rm -rf etcd-0.csr etcd-ca.srl
+
+scp etcd-ca.crt root@etcd-0:/var/lib/kubelet/etcd-ca.crt
+scp etcd-0.crt root@etcd-0:/var/lib/kubelet/etcd.crt
+scp etcd-0.key root@etcd-0:/var/lib/kubelet/etcd.key
+
+vi etcd.conf
+**************************************************************************
+[etcd-1]
+distinguished_name = etcd_1_distinguished_name
+prompt             = no
+req_extensions    = etcd_1_req_extensions
+
+[etcd_1_req_extensions]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names_etcd_1
+extendedKeyUsage = serverAuth, clientAuth
+
+[alt_names_etcd_1]
+DNS.1=etcd-1
+DNS.2=etcd-1.us-central1-c.c.myk8sproject-437517.internal
+IP.1=10.128.0.4
+
+[etcd_1_distinguished_name]
+CN  = etcd-server
+**************************************************************************
+
+openssl genrsa -out etcd-1.key 4096
+openssl req -new -key etcd-1.key -sha256 -config etcd.conf -section etcd-1 -reqexts etcd_1_req_extensions -out etcd-1.csr
+openssl x509 -req -days 3653 -in etcd-1.csr -copy_extensions copyall -sha256 -CA etcd-ca.crt -CAkey etcd-ca.key -CAcreateserial -out etcd-1.crt
+rm -rf etcd-1.csr etcd-ca.srl
+
+scp etcd-ca.crt root@etcd-1:/var/lib/kubelet/etcd-ca.crt
+scp etcd-1.crt root@etcd-1:/var/lib/kubelet/etcd.crt
+scp etcd-1.key root@etcd-1:/var/lib/kubelet/etcd.key
+
+vi etcd.conf
+**************************************************************************
+[etcd-2]
+distinguished_name = etcd_2_distinguished_name
+prompt             = no
+req_extensions    = etcd_2_req_extensions
+
+[etcd_2_req_extensions]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names_etcd_2
+extendedKeyUsage = serverAuth, clientAuth
+
+[alt_names_etcd_2]
+DNS.1=etcd-2
+DNS.2=etcd-2.us-central1-c.c.myk8sproject-437517.internal
+IP.1=10.128.0.6
+
+[etcd_2_distinguished_name]
+CN  = etcd-server
+**************************************************************************
+
+openssl genrsa -out etcd-2.key 4096
+openssl req -new -key etcd-2.key -sha256 -config etcd.conf -section etcd-2 -reqexts etcd_2_req_extensions -out etcd-2.csr
+openssl x509 -req -days 3653 -in etcd-2.csr -copy_extensions copyall -sha256 -CA etcd-ca.crt -CAkey etcd-ca.key -CAcreateserial -out etcd-2.crt
+rm -rf etcd-2.csr etcd-ca.srl
+
+scp etcd-ca.crt root@etcd-2:/var/lib/kubelet/etcd-ca.crt
+scp etcd-2.crt root@etcd-2:/var/lib/kubelet/etcd.crt
+scp etcd-2.key root@etcd-2:/var/lib/kubelet/etcd.key
+
 etcd manifest file:
 ===================
 mkdir -p /etc/kubernetes/manifests
@@ -28,22 +145,36 @@ spec:
     args:
     - /usr/local/bin/etcd
     - --name=etcd0
-    - --advertise-client-urls=http://10.128.0.8:2379
-    - --listen-client-urls=http://0.0.0.0:2379
-    - --listen-peer-urls=http://0.0.0.0:2380
+    - --advertise-client-urls=https://10.128.0.7:2379
+    - --listen-client-urls=https://0.0.0.0:2379
+    - --listen-peer-urls=https://0.0.0.0:2380
     - --data-dir=/var/lib/etcd
-    - --initial-advertise-peer-urls=http://10.128.0.8:2380
-    - --initial-cluster=etcd0=http://10.128.0.8:2380,etcd1=http://10.128.0.9:2380,etcd2=http://10.128.0.7:2380
+    - --trusted-ca-file=/var/lib/kubelet/etcd-ca.crt
+    - --cert-file=/var/lib/kubelet/etcd.crt
+    - --key-file=/var/lib/kubelet/etcd.key
+    - --peer-trusted-ca-file=/var/lib/kubelet/etcd-ca.crt
+    - --peer-cert-file=/var/lib/kubelet/etcd.crt
+    - --peer-key-file=/var/lib/kubelet/etcd.key
+    - --client-cert-auth=true
+    - --peer-client-cert-auth=true
+    - --initial-advertise-peer-urls=https://etcd-0.us-central1-c.c.myk8sproject-437517.internal:2380
+    - --initial-cluster=etcd0=https://etcd-0.us-central1-c.c.myk8sproject-437517.internal:2380,etcd1=https://etcd-1.us-central1-c.c.myk8sproject-437517.internal:2380,etcd2=https://etcd-2.us-central1-c.c.myk8sproject-437517.internal:2380
     - --initial-cluster-state=new
     - --initial-cluster-token=etcd-cluster-token
     volumeMounts:
     - mountPath: /var/lib/etcd
       name: etcd-data
+    - mountPath: /var/lib/kubelet
+      name: etcd-certs
   volumes:
   - hostPath:
       path: /var/lib/etcd
       type: DirectoryOrCreate
     name: etcd-data
+  - hostPath:
+      path: /var/lib/kubelet
+      type: DirectoryOrCreate
+    name: etcd-certs
 **************************************************************************
 
 
@@ -64,22 +195,36 @@ spec:
     args:
     - /usr/local/bin/etcd
     - --name=etcd1
-    - --advertise-client-urls=http://10.128.0.9:2379
-    - --listen-client-urls=http://0.0.0.0:2379
-    - --listen-peer-urls=http://0.0.0.0:2380
+    - --advertise-client-urls=https://10.128.0.4:2379
+    - --listen-client-urls=https://0.0.0.0:2379
+    - --listen-peer-urls=https://0.0.0.0:2380
     - --data-dir=/var/lib/etcd
-    - --initial-advertise-peer-urls=http://10.128.0.9:2380
-    - --initial-cluster=etcd0=http://10.128.0.8:2380,etcd1=http://10.128.0.9:2380,etcd2=http://10.128.0.7:2380
+    - --trusted-ca-file=/var/lib/kubelet/etcd-ca.crt
+    - --cert-file=/var/lib/kubelet/etcd.crt
+    - --key-file=/var/lib/kubelet/etcd.key
+    - --peer-trusted-ca-file=/var/lib/kubelet/etcd-ca.crt
+    - --peer-cert-file=/var/lib/kubelet/etcd.crt
+    - --peer-key-file=/var/lib/kubelet/etcd.key
+    - --client-cert-auth=true
+    - --peer-client-cert-auth=true
+    - --initial-advertise-peer-urls=https://etcd-1.us-central1-c.c.myk8sproject-437517.internal:2380
+    - --initial-cluster=etcd0=https://etcd-0.us-central1-c.c.myk8sproject-437517.internal:2380,etcd1=https://etcd-1.us-central1-c.c.myk8sproject-437517.internal:2380,etcd2=https://etcd-2.us-central1-c.c.myk8sproject-437517.internal:2380
     - --initial-cluster-state=new
     - --initial-cluster-token=etcd-cluster-token
     volumeMounts:
     - mountPath: /var/lib/etcd
       name: etcd-data
+    - mountPath: /var/lib/kubelet
+      name: etcd-certs
   volumes:
   - hostPath:
       path: /var/lib/etcd
       type: DirectoryOrCreate
     name: etcd-data
+  - hostPath:
+      path: /var/lib/kubelet
+      type: DirectoryOrCreate
+    name: etcd-certs
 **************************************************************************
 
 
@@ -100,22 +245,42 @@ spec:
     args:
     - /usr/local/bin/etcd
     - --name=etcd2
-    - --advertise-client-urls=http://10.128.0.7:2379
-    - --listen-client-urls=http://0.0.0.0:2379
-    - --listen-peer-urls=http://0.0.0.0:2380
+    - --advertise-client-urls=https://10.128.0.6:2379
+    - --listen-client-urls=https://0.0.0.0:2379
+    - --listen-peer-urls=https://0.0.0.0:2380
     - --data-dir=/var/lib/etcd
-    - --initial-advertise-peer-urls=http://10.128.0.7:2380
-    - --initial-cluster=etcd0=http://10.128.0.8:2380,etcd1=http://10.128.0.9:2380,etcd2=http://10.128.0.7:2380
+    - --trusted-ca-file=/var/lib/kubelet/etcd-ca.crt
+    - --cert-file=/var/lib/kubelet/etcd.crt
+    - --key-file=/var/lib/kubelet/etcd.key
+    - --peer-trusted-ca-file=/var/lib/kubelet/etcd-ca.crt
+    - --peer-cert-file=/var/lib/kubelet/etcd.crt
+    - --peer-key-file=/var/lib/kubelet/etcd.key
+    - --client-cert-auth=true
+    - --peer-client-cert-auth=true
+    - --initial-advertise-peer-urls=https://etcd-2.us-central1-c.c.myk8sproject-437517.internal:2380
+    - --initial-cluster=etcd0=https://etcd-0.us-central1-c.c.myk8sproject-437517.internal:2380,etcd1=https://etcd-1.us-central1-c.c.myk8sproject-437517.internal:2380,etcd2=https://etcd-2.us-central1-c.c.myk8sproject-437517.internal:2380
     - --initial-cluster-state=new
     - --initial-cluster-token=etcd-cluster-token
     volumeMounts:
     - mountPath: /var/lib/etcd
       name: etcd-data
+    - mountPath: /var/lib/kubelet
+      name: etcd-certs
   volumes:
   - hostPath:
       path: /var/lib/etcd
       type: DirectoryOrCreate
     name: etcd-data
+  - hostPath:
+      path: /var/lib/kubelet
+      type: DirectoryOrCreate
+    name: etcd-certs
 **************************************************************************
 
-etcdctl endpoint status --cluster -w table
+export ETCDCTL_ENDPOINTS=https://etcd-0.us-central1-c.c.myk8sproject-437517.internal:2379,https://etcd-1.us-central1-c.c.myk8sproject-437517.internal:2379,https://etcd-2.us-central1-c.c.myk8sproject-437517.internal:2379
+
+etcdctl --cacert /var/lib/kubelet/etcd-ca.crt --cert /var/lib/kubelet/etcd.crt --key /var/lib/kubelet/etcd.key endpoint status --cluster -w table
+
+etcdctl --cacert /var/lib/kubelet/etcd-ca.crt --cert /var/lib/kubelet/etcd.crt --key /var/lib/kubelet/etcd.key member list -w table
+
+etcdctl --cacert /var/lib/kubelet/etcd-ca.crt --cert /var/lib/kubelet/etcd.crt --key /var/lib/kubelet/etcd.key endpoint health -w table

@@ -23,7 +23,10 @@ spec:
     - --client-ca-file=/var/lib/kubernetes/ca.crt
     - --enable-admission-plugins=NodeRestriction
     - --enable-bootstrap-token-auth=true
-    - --etcd-servers=http://10.128.0.8:2379,http://10.128.0.9:2379,http://10.128.0.7:2379
+    - --etcd-cafile=/var/lib/kubelet/etcd-ca.crt
+    - --etcd-certfile=/var/lib/kubelet/etcd.crt
+    - --etcd-keyfile=/var/lib/kubelet/etcd.key
+    - --etcd-servers=https://etcd-0.us-central1-c.c.myk8sproject-437517.internal:2379,https://etcd-1.us-central1-c.c.myk8sproject-437517.internal:2379,https://etcd-2.us-central1-c.c.myk8sproject-437517.internal:2379
     - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
     - --kubelet-client-certificate=/var/lib/kubernetes/kubelet.crt
     - --kubelet-client-key=/var/lib/kubernetes/kubelet.key
@@ -37,12 +40,50 @@ spec:
     volumeMounts:
     - mountPath: /var/lib/kubernetes
       name: k8s-certs
+    - mountPath: /var/lib/kubelet
+      name: etcd-certs
   volumes:
     - hostPath:
         path: /var/lib/kubernetes
         type: DirectoryOrCreate
       name: k8s-certs
+    - hostPath:
+        path: /var/lib/kubelet
+        type: DirectoryOrCreate
+      name: etcd-certs
 **************************************************************************************
+
+
+vi /root/k8s/certs/etcd/etcd.conf
+**************************************************************************
+[master-0]
+distinguished_name = master_0_distinguished_name
+prompt             = no
+req_extensions    = master_0_req_extensions
+
+[master_0_req_extensions]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names_master_0
+extendedKeyUsage = serverAuth, clientAuth
+
+[alt_names_master_0]
+DNS.1=master-0
+DNS.2=master-0.us-central1-c.c.myk8sproject-437517.internal
+IP.1=10.128.0.5
+
+[master_0_distinguished_name]
+CN  = etcd-client
+**************************************************************************
+
+openssl genrsa -out etcd-master-0.key 4096
+openssl req -new -key etcd-master-0.key -sha256 -config etcd.conf -section master-0 -reqexts master_0_req_extensions -out etcd-master-0.csr
+openssl x509 -req -days 3653 -in etcd-master-0.csr -copy_extensions copyall -sha256 -CA etcd-ca.crt -CAkey etcd-ca.key -CAcreateserial -out etcd-master-0.crt
+rm -rf etcd-master-0.csr etcd-ca.srl
+
+scp etcd-ca.crt /var/lib/kubelet/etcd-ca.crt
+scp etcd-master-0.crt /var/lib/kubelet/etcd.crt
+scp etcd-master-0.key /var/lib/kubelet/etcd.key
 
 Generate API server certs(crt & key):
 =====================================
