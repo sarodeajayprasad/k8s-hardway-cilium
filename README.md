@@ -16,3 +16,9 @@ This branch aims to configure k8s the hardway. Three VMs are created in GCP, eac
 8. scheduler & certs.txt -- manifest file of scheduler. runs scheduler as static pod, generates certs, and kubeconfig
 9. kube-api-server-to-kubelet-rbac.txt -- kube-apiserver has the necessary permissions to communicate with the kubelets on the cluster nodes
 10. Cilium.txt -- Installs cilium using helm.
+
+What's next?
+
+datadog
+velero
+wif
