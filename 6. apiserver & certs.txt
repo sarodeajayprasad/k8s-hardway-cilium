@@ -45,11 +45,17 @@ spec:
     volumeMounts:
     - mountPath: /var/lib/kubernetes
       name: k8s-certs
+    - mountPath: /var/lib/kubelet
+      name: k8s-proxy-certs
   volumes:
     - hostPath:
         path: /var/lib/kubernetes
         type: DirectoryOrCreate
       name: k8s-certs
+    - hostPath:
+        path: /var/lib/kubelet
+        type: DirectoryOrCreate
+      name: k8s-proxy-certs
 **************************************************************************************
 
 Generate API server certs(crt & key):
